@@ -42,23 +42,10 @@ fi
 cidr_to_mask() {
     local i cidr=${1:-0} mask=""
     [[ "$cidr" -eq 0 ]] && { echo "0.0.0.0"; return; }
-    
     for ((i=0; i<4; i++)); do
         local n=0
-        if (( cidr >= 8 )); then
-            n=8
-        elif (( cidr > 0 )); then
-            n=$cidr
-        else
-            n=0
-        fi
-        
-        if (( n > 0 )); then
-            mask+=$(( (256 - (1 << (8 - n))) & 255 ))
-        else
-            mask+="0"
-        fi
-        
+        if (( cidr >= 8 )); then n=8; elif (( cidr > 0 )); then n=$cidr; else n=0; fi
+        if (( n > 0 )); then mask+=$(( (256 - (1 << (8 - n))) & 255 )); else mask+="0"; fi
         (( i < 3 )) && mask+="."
         (( cidr -= n ))
     done
@@ -80,8 +67,6 @@ HOST=$(hostname)
 
 # --- Interface Info ---
 MAC=$(cat "/sys/class/net/$INTERFACE/address" | tr '[:lower:]' '[:upper:]')
-
-# Simplified Description Logic
 BUS_ID=$(basename "$(readlink "/sys/class/net/$INTERFACE/device" 2>/dev/null || echo "none")")
 DESC=$(lspci -nn 2>/dev/null | grep -i "$BUS_ID" | head -1 | awk -F'[][]' '{print "0x"$2 " 0x"$4}')
 [[ -z "$DESC" ]] && DESC="Network Adapter ($INTERFACE)"
@@ -130,6 +115,22 @@ if [[ "${1:-}" == "/all" ]]; then
     TX=$(cat "/sys/class/net/$INTERFACE/statistics/tx_bytes")
     echo "RX Bytes. . . . . . . . . . . . . : $(bytes_human "$RX") ($RX bytes)"
     echo "TX Bytes. . . . . . . . . . . . . : $(bytes_human "$TX") ($TX bytes)"
-    echo "DHCP Lease Info. . . . . . . . .  : No lease information found."
+
+    # --- DHCP Lease Parsing ---
+    if [[ "$DHCP" == "Yes" ]]; then
+        DHCP_DATA=$(nmcli -f DHCP4 device show "$INTERFACE" 2>/dev/null)
+        LEASE_EXP_UNIX=$(echo "$DHCP_DATA" | grep "expiry" | awk '{print $NF}')
+        DHCP_SRV=$(echo "$DHCP_DATA" | grep "dhcp_server_identifier" | awk '{print $NF}')
+        
+        if [[ -n "$LEASE_EXP_UNIX" ]]; then
+            LEASE_EXP=$(date -d "@$LEASE_EXP_UNIX" +"%A, %B %d, %Y %I:%M:%S %p")
+            echo "DHCP Server . . . . . . . . . . . : $DHCP_SRV"
+            echo "Lease Expires . . . . . . . . . . : $LEASE_EXP"
+        else
+            echo "DHCP Lease Info. . . . . . . . .  : Managed by NetworkManager"
+        fi
+    else
+        echo "DHCP Lease Info. . . . . . . . .  : N/A (Static IP)"
+    fi
 fi
 echo
