@@ -88,6 +88,10 @@ echo "Copyright (c) 2025 Linux Foundation. All rights reserved."
 echo
 echo "Linux IP Configuration"
 echo
+echo "Activation Status . . . . . . .  : Genuine Linux Copy"
+echo "Product ID . . . . . . . . . . . : 1337-42069-LSP"
+echo "License Channel . . . . . . . .  : Open Source (Retail)"
+echo
 echo "Operating System . . . . . . . . : $OS_NAME"
 echo "Kernel Version . . . . . . . . . : $KERNEL"
 echo "Host Name . . . . . . . . . . .  : $HOST"
@@ -101,6 +105,7 @@ echo "Subnet Mask . . . . . . . . . . . : $MASK"
 echo "Default Gateway . . . . . . . . . : ${GW:-None}"
 echo "DNS Servers . . . . . . . . . . . : $DNS"
 echo "NetBIOS over Tcpip. . . . . . . . : Microsoft Moment 69™"
+echo "Telemetry Status. . . . . . . . . : Opt-Out (Ignored)"
 
 if [[ "${1:-}" == "/all" ]]; then
     echo
